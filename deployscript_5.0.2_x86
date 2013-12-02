@@ -1,0 +1,312 @@
+#!/bin/sh
+if test $# -lt 3
+then
+echo "usage: [path/to/build] [path/to/framework] [path/to/plugins] [options]"
+echo "valid options are:"
+echo "-m = use macdeployqt"
+echo "-c = use install_name_tool"
+else
+#echo {$PWD}
+#$CURRENTPATH = {$PWD}
+#echo $CURRENTPATH 
+
+cd $1
+
+#------------------------------------
+#finding the dependencies of the app:
+#------------------------------------
+echo "First we run tool:"
+otool -L PSndDemo.app/Contents/MacOS/PSndDemo
+
+#--------------------------------
+# making all necessary directories
+#--------------------------------
+mkdir PSndDemo.app/Contents/Frameworks
+mkdir PSndDemo.app/Contents/Plugins
+mkdir PSndDemo.app/Contents/doc
+#mkdir PSndDemo.app/Contents/qss
+#mkdir PSndDemo.app/Contents/images
+
+
+#------------------------------
+#copying the required Librarys
+#not copied by macdeployqt:
+#------------------------------
+cp -R /Developer/SDKs/libmp123/x86/lib/libmpg123.dylib PSndDemo.app/Contents/Frameworks
+cp -R /Developer/SDKs/libmp123/x86/lib/libmpg123.0.dylib PSndDemo.app/Contents/Frameworks
+cp -R /Developer/SDKs/libsndfile/libsndfile_86_10.5/libsndfile.1.dylib PSndDemo.app/Contents/Frameworks
+cp -R /Developer/SDKs/libsndfile/libsndfile_86_10.5/libsndfile.dylib PSndDemo.app/Contents/Frameworks
+cp /Developer/SDKs/meta/x86/lib/libmeta.dylib PSndDemo.app/Contents/Frameworks
+cp  /usr/lib/libltdl.7.dylib PSndDemo.app/Contents/Frameworks
+
+cp  /Developer/Qt_projekte/ProSoundFinder/qt.conf PSndDemo.app/Contents/Resources
+cp  /Developer/Qt_projekte/ProSoundFinder/PSndDemo.icns PSndDemo.app/Contents/Resources
+rm  PSndDemo.app/Contents/Info.plist
+cp  /Developer/Qt_projekte/ProSoundFinder/Info.plist PSndDemo.app/Contents/Info.plist
+cp  /Developer/Qt_projekte/ProSoundFinder/doc/HELP_PSndDemo.pdf PSndDemo.app/Contents/doc/HELP_PSndDemo.pdf
+
+
+#------------------------------
+#copying Special Case Old MySqlDriver
+#not copied by macdeployqt:
+#------------------------------
+#cp  /Developer/Applications/Qt/plugins/sqldrivers/libqsqlmysql.dylib PSndDemo.app/Contents/Plugins/sqldrivers
+	cp  -R /Developer/Qt5.0.2/clang32/qt-everywhere-opensource-src-5.0.2/qtbase/plugins/sqldrivers/libqsqlmysql.dylib PSndDemo.app/Contents/Plugins/sqldrivers/libqsqlmysql.dylib
+	cp  -R /Developer/mysql/mysql-connector-c-6.0.2-osx10.5-x86-32bit/lib/libmysql.16.0.0.dylib PSndDemo.app/Contents/Frameworks
+	cp  -R /Developer/mysql/mysql-connector-c-6.0.2-osx10.5-x86-32bit/lib/libmysql.16.dylib PSndDemo.app/Contents/Frameworks
+	cp  -R /Developer/mysql/mysql-connector-c-6.0.2-osx10.5-x86-32bit/lib/libmysql.dylib PSndDemo.app/Contents/Frameworks
+	cp  -R /Developer/mysql/mysql-connector-c-6.0.2-osx10.5-x86-32bit/lib/libmysqlclient_r.dylib PSndDemo.app/Contents/Frameworks
+	cp  -R /Developer/mysql/mysql-connector-c-6.0.2-osx10.5-x86-32bit/lib/libmysqlclient.dylib PSndDemo.app/Contents/Frameworks
+
+
+
+
+if test $# -gt 3
+	then
+	if test $4 = "-c"
+	then
+#------------------------------
+#copying the required Librarys:
+#------------------------------
+cp -R /Developer/SDKs/libsndfile/libsndfile_86_10.5/libsndfile.1.dylib PSndDemo.app/Contents/Frameworks
+cp -R /Developer/SDKs/libsndfile/libsndfile_86_10.5/libsndfile.dylib PSndDemo.app/Contents/Frameworks
+cp -R /Developer/SDKs/libmp123/x86/lib/libmpg123.dylib PSndDemo.app/Contents/Frameworks
+cp -R /Developer/SDKs/libmp123/x86/lib/libmpg123.0.dylib PSndDemo.app/Contents/Frameworks
+
+
+#--------------------------------
+#copying the required Frameworks:
+#--------------------------------
+cp -R $2/QtGui.framework PSndDemo.app/Contents/Frameworks
+cp -R $2/QtCore.framework PSndDemo.app/Contents/Frameworks
+cp -R $2/QtDBus.framework PSndDemo.app/Contents/Frameworks
+
+#-----------------------------
+#copying the required Plugins:
+#-----------------------------
+#cp -R $3/sqldrivers PSndDemo.app/Contents/Plugins
+cp -R $3 PSndDemo.app/Contents
+
+#-----------------------------
+#copying other required Stuff:
+#-----------------------------
+#cp -R /Developer/Qt_projekte/ProSoundFinder/doc PSndDemo.app/Contents/doc
+#cp -R /Developer/Qt_projekte/ProSoundFinder/qss PSndDemo.app/Contents/qss
+#cp -R /Developer/Qt_projekte/ProSoundFinder/images PSndDemo.app/Contents/images
+#cp -R /Developer/Qt_projekte/ProSoundFinder/PSndDemo.icns PSndDemo.app/Contents/Resources
+
+
+
+
+#-------------------
+#changing the names:
+#-------------------
+
+install_name_tool -id @executable_path/../Frameworks/QtGui.framework/Versions/5.0/QtGui PSndDemo.app/Contents/Frameworks/QtGui.framework/Versions/5/QtGui
+install_name_tool -id @executable_path/../Frameworks/QtCore.framework/Versions/5.0/QtCore PSndDemo.app/Contents/Frameworks/QtCore.framework/Versions/5/QtCore
+install_name_tool -id @executable_path/../Frameworks/QtSql.framework/Versions/5.0/QtSql PSndDemo.app/Contents/Frameworks/QtSql.framework/Versions/5/QtSql
+install_name_tool -id @executable_path/../Frameworks/QtNetwork.framework/Versions/5.0/QtNetwork PSndDemo.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+install_name_tool -id @executable_path/../Frameworks/QtOpenGL.framework/Versions/5.0/QtOpenGL PSndDemo.app/Contents/Frameworks/QtOpenGL.framework/Versions/5/QtOpenGL
+install_name_tool -id @executable_path/../Frameworks/QtDBus.framework/Versions/5.0/QQtDBus PSndDemo.app/Contents/Frameworks/QtDBus.framework/Versions/5/QtDBus
+
+install_name_tool -id @executable_path/../Frameworks/libmeta.dylib PSndDemo.app/Contents/Frameworks/libmeta.dylib
+install_name_tool -id @executable_path/../Frameworks/libmpg123.0.dylib PSndDemo.app/Contents/Frameworks/libmpg123.0.dylib
+install_name_tool -id @executable_path/../Frameworks/libsndfile.dylib PSndDemo.app/Contents/Frameworks/libsndfile.dylib
+
+install_name_tool -id @executable_path/../Frameworks/libmysql.dylib PSndDemo.app/Contents/Frameworks/libmysql.dylib
+
+#-------------------------------------------------------------
+#changing the dependencies of the app:
+#zuerst kommt der alte Pfad der zu findenden Library, 
+#dann der neue Pfad der zu findenden Library 
+#und dann die bin oder Lib die nach der zu findenden Lib sucht!!
+# the following leeds to duplicate declarations:
+#--------------------------------------------------------------
+
+#echo "changing "$2"/QtCore.framework/Versions/5/QtCore"
+#install_name_tool -change $2/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/MacOs/PSndDemo
+
+#echo "changing "$2"/QtCore.framework/Versions/5/QtGui"
+#install_name_tool -change $2/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui PSndDemo.app/Contents/MacOs/PSndDemo
+
+#echo "changing "$2"/QtCore.framework/Versions/5/QtSql"
+#install_name_tool -change $2/QtSql.framework/Versions/5/QtSql @executable_path/../Frameworks/QtSql.framework/Versions/5/QtSql PSndDemo.app/Contents/MacOs/PSndDemo
+
+#echo "changing "$2"/QtCore.framework/Versions/5/QtNetwork"
+#install_name_tool -change $2/QtNetwork.framework/Versions/5/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork PSndDemo.app/Contents/MacOs/PSndDemo
+
+install_name_tool -change /usr/local/lib/libsndfile.1.dylib @executable_path/../Frameworks/libsndfile.dylib PSndDemo.app/Contents/MacOs/PSndDemo
+install_name_tool -change /usr/local/lib/libmpg123.0.dylib @executable_path/../Frameworks/libmpg123.0.dylib PSndDemo.app/Contents/MacOs/PSndDemo
+install_name_tool -change //usr/local/lib/libmeta.dylib @executable_path/../Frameworks/libmeta.dylib PSndDemo.app/Contents/MacOs/PSndDemo
+
+
+#--------------------------------------
+#changing dependencies of the Libraries:
+#---------------------------------------
+
+	
+#install_name_tool -change $2/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui PSndDemo.app/Contents/Frameworks/QtGui.framework/Versions/5/QtGui
+
+install_name_tool -change $2/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/QtGui.framework/Versions/5/QtGui
+install_name_tool -change $2/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+install_name_tool -change $2/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/QtSql.framework/Versions/5/QtSql
+install_name_tool -change $2/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/QtOpenGL.framework/Versions/5/QtOpenGL
+install_name_tool -change $2/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/QtDBus.framework/Versions/5/QtDBus
+install_name_tool -change $2/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/QtXml.framework/Versions/5/QtXml
+install_name_tool -change $2/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/QtWebKit.framework/Versions/5/QtWebKit
+
+#install_name_tool -change $2QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/libsndfile.1.dylib
+#install_name_tool -change /Developer/SDKs/meta/x86_64/lib/libmeta.dylib @executable_path/../Frameworks/libmeta.dylib PSndDemo.app/Contents/MacOs/PSndDemo.app/Contents/Frameworks/QtGui.framework/Versions/5/QtGui
+#install_name_tool -change /Developer/SDKs/meta/x86_64/lib/libmeta.dylib @executable_path/../Frameworks/libmeta.dylib PSndDemo.app/Contents/MacOs/PSndDemo.app/Contents/Frameworks/QtCore.framework/Versions/5/QtCore
+
+
+
+
+install_name_tool -change $2/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtCore PSndDemo.app/Contents/Frameworks/QtOpenGL.framework/Versions/5/QtOpenGL
+install_name_tool -change $2/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui PSndDemo.app/Contents/Frameworks/QtDBus.framework/Versions/5/QtDBus
+install_name_tool -change $2/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui PSndDemo.app/Contents/Frameworks/QtOpenGL.framework/Versions/5/QtOpenGL
+install_name_tool -change $2/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui PSndDemo.app/Contents/Frameworks/QtSql.framework/Versions/5/QtSql
+install_name_tool -change $2/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui PSndDemo.app/Contents/Frameworks/QtXml.framework/Versions/5/QtXml
+
+
+#install_name_tool -change $2/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui PSndDemo.app/Contents/Frameworks/libsndfile.1.dylib
+
+#otool -L PSndDemo.app/Contents/MacOS/PSndDemo
+fi
+fi
+
+
+if test $# -gt 3
+	then
+	if test $4 = "-m"
+		then
+		echo "Running macdeployqt:"
+		macdeployqt  PSndDemo.app
+		echo "tool after running macdeployqt:"
+		otool -L PSndDemo.app/Contents/MacOS/PSndDemo
+		fi
+
+	fi
+
+#--------------------------------
+#changing the dependencies of the 
+#app not changed by macdeployqt:
+#--------------------------------
+#echo "changing /Developer/SDKs/meta/x86/lib/libmeta.dylib"
+#install_name_tool -change /Developer/SDKs/meta/x86/lib/libmeta.dylib @executable_path/../Frameworks/libmeta.dylib PSndDemo.app/Contents/MacOs/PSndDemo
+#install_name_tool -change /Developer/Qt_projekte/meta-build-desktop-Qt_aus_PATH_Release/libmeta.dylib @executable_path/../Frameworks/libmeta.dylib PSndDemo.app/Contents/MacOs/PSndDemo
+
+install_name_tool -change /usr/lib/libltdl.7.dylib @executable_path/../Frameworks/libltdl.7.dylib PSndDemo.app/Contents/Frameworks/libmpg123.0.dylib
+#install_name_tool -change //usr/local/lib/libmeta.dylib @executable_path/../Frameworks/libmeta.dylib PSndDemo.app/Contents/MacOs/QtCore
+#install_name_tool -change //usr/local/lib/libmeta.dylib @executable_path/../Frameworks/libmeta.dylib PSndDemo.app/Contents/MacOs/PSndDemo
+
+install_name_tool -change /Developer/mysql/mysql-connector-c-6.0.2-osx10.5-x86-32bit/lib/libmysqlclient_r.dylib @executable_path/../Frameworks/libmysqlclient_r.dylib PSndDemo.app/Contents/plugins/sqldrivers/libqsqlmysql.dylib
+
+#-----------------------------------------------
+#remove the unused stuff created by macdeployqt:
+#-----------------------------------------------
+rm PSndDemo.app/Contents/Plugins/sqldrivers/libqsqlite_debug.dylib
+rm PSndDemo.app/Contents/Plugins/sqldrivers/libqsqlodbc_debug.dylib
+
+
+rm -rf PSndDemo.app/Contents/Plugins/designer
+rm -rf PSndDemo.app/Contents/Plugins/iconengines
+rm -rf PSndDemo.app/Contents/Plugins/accessible
+rm -rf PSndDemo.app/Contents/Plugins/bearer
+rm -rf PSndDemo.app/Contents/Plugins/codecs
+rm -rf PSndDemo.app/Contents/Plugins/graphicssystems
+rm -rf PSndDemo.app/Contents/Plugins/imageformats
+rm -rf PSndDemo.app/Contents/Plugins/qmltooling
+
+
+
+
+
+
+rm PSndDemo.app/Contents/Frameworks/QtCore.framework/Versions/5/QtCore_debug
+rm PSndDemo.app/Contents/Frameworks/QtCore.framework/QtCore_debug
+rm PSndDemo.app/Contents/Frameworks/QtCore.framework/QtCore_debug.prl
+rm -rf PSndDemo.app/Contents/Frameworks/QtCore.framework/QtCore_debug.dSYM
+
+
+rm PSndDemo.app/Contents/Frameworks/QtGui.framework/Versions/5/QtGui_debug
+rm PSndDemo.app/Contents/Frameworks/QtGui.framework/QtGui_debug
+rm PSndDemo.app/Contents/Frameworks/QtGui.framework/QtGui_debug.prl
+rm -rf PSndDemo.app/Contents/Frameworks/QtGui.framework/QtGui_debug.dSYM
+
+rm PSndDemo.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork_debug
+rm PSndDemo.app/Contents/Frameworks/QtNetwork.framework/QtNetwork_debug
+rm PSndDemo.app/Contents/Frameworks/QtNetwork.framework/QtNetwork_debug.prl
+rm -rf PSndDemo.app/Contents/Frameworks/QtNetwork.framework/QtNetwork_debug.dSYM
+
+rm PSndDemo.app/Contents/Frameworks/QtSql.framework/Versions/5/QtSql_debug
+rm PSndDemo.app/Contents/Frameworks/QtSql.framework/QtSql_debug
+rm PSndDemo.app/Contents/Frameworks/QtSql.framework/QtSql_debug.prl
+rm -rf PSndDemo.app/Contents/Frameworks/QtSql.framework/QtSql_debug.dSYM
+
+rm PSndDemo.app/Contents/Frameworks/QtOpenGL.framework/Versions/5/QtOpenGL_debug
+rm PSndDemo.app/Contents/Frameworks/QtOpenGLl.framework/QtOpenGL_debug
+rm PSndDemo.app/Contents/Frameworks/QtOpenGL.framework/QtOpenGL_debug.prl
+rm -rf PSndDemo.app/Contents/Frameworks/QtOpenGL.framework/QtOpenGL_debug.dSYM
+
+rm PSndDemo.app/Contents/Frameworks/QtDBus.framework/Versions/5/QtDBus_debug
+rm PSndDemo.app/Contents/Frameworks/QtDBus.framework/QtDBus_debug
+rm PSndDemo.app/Contents/Frameworks/QtDBus.framework/QtDBus_debug.prl
+rm -rf PSndDemo.app/Contents/Frameworks/QtDBus.framework/QtDBus_debug.dSYM
+
+rm -rf PSndDemo.app/Contents/Frameworks/QtDeclarative.framework
+rm -rf PSndDemo.app/Contents/Frameworks/QtScript.framework
+rm -rf PSndDemo.app/Contents/Frameworks/QtSvg.framework
+rm -rf PSndDemo.app/Contents/Frameworks/QtXmlPatterns.framework
+
+
+
+echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+++++++++++++++++++++ Testing Library Debendencys +++++++++++++++++++++++++++++++++++++++++++"
+echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "PSndDemo"
+otool -L PSndDemo.app/Contents/MacOS/PSndDemo
+echo "libmeta"
+otool -L PSndDemo.app/Contents/Frameworks/libmeta.dylib
+echo "libmpg123.0"
+otool -L PSndDemo.app/Contents/Frameworks/libmpg123.0.dylib
+echo "libsndfile:"
+otool -L PSndDemo.app/Contents/Frameworks/libsndfile.1.dylib
+echo "QtCore:"
+otool -L PSndDemo.app/Contents/Frameworks/QtCore.framework/Versions/5/QtCore
+echo "QtGui"
+otool -L PSndDemo.app/Contents/Frameworks/QtGui.framework/Versions/5/QtGui
+echo "QtNetwork:"
+otool -L PSndDemo.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+echo "QtOpenGL:"
+otool -L PSndDemo.app/Contents/Frameworks/QtOpenGL.framework/Versions/5/QtOpenGL
+echo "QtSql:"
+otool -L PSndDemo.app/Contents/Frameworks/QtSql.framework/Versions/5/QtSql
+echo "QtWebKit:"
+otool -L PSndDemo.app/Contents/Frameworks/QtWebKit.framework/Versions/5/QtWebKit
+echo "QtMultimedia:"
+otool -L PSndDemo.app/Contents/Frameworks/QtMultimedia.framework/Versions/5/QtMultimedia
+echo "QtMultimediaWidgets:"
+otool -L PSndDemo.app/Contents/Frameworks/QtMultimediaWidgets.framework/Versions/5/QtMultimediaWidgets
+echo "QtPrintSupport:"
+otool -L PSndDemo.app/Contents/Frameworks/QtPrintSupport.framework/Versions/5/QtPrintSupport
+echo "QtQml:"
+otool -L PSndDemo.app/Contents/Frameworks/QtQml.framework/Versions/5/QtQml
+echo "QtQuick:"
+otool -L PSndDemo.app/Contents/Frameworks/QtQuick.framework/Versions/5/QtQuick
+echo "QtV8:"
+otool -L PSndDemo.app/Contents/Frameworks/QtV8.framework/Versions/5/QtV8
+echo "QtWidgets:"
+otool -L PSndDemo.app/Contents/Frameworks/QtWidgets.framework/Versions/5/QtWidgets
+echo "QtXml:"
+otool -L PSndDemo.app/Contents/Frameworks/QtXml.framework/Versions/5/QtXml
+echo "libqsqlmysql:"
+otool -L PSndDemo.app/Contents/Plugins/sqldrivers/libqsqlmysql.dylib
+
+fi
+
+cd $PWD
+
+
+
+
