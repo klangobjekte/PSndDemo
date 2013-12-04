@@ -181,9 +181,16 @@ void MyWidget::addSndFile()
     }
     player->pause();
 
-    player->addFile(finfo.filePath().toStdString().c_str());
+
+
     double len = 10;
+#ifdef WIN32
+    player->addFile(finfo.filePath().toStdWString().c_str());
+    soundfile = new SndFile(finfo.filePath().toStdWString().c_str());
+#else
+    player->addFile(finfo.filePath().toStdString().c_str());
     soundfile = new SndFile(finfo.filePath().toStdString().c_str());
+#endif
     len = soundfile->getLengthSeconds();
     soundfile->open();
 
