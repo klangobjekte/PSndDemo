@@ -1,14 +1,15 @@
-#include "qwave2.h"
+#include "playerdemo.h"
 #include <QApplication>
 #include <QLabel>
-#include <QSizePolicy>
 #include <QFileDialog>
-#include <QMessageBox>
 #include <QHBoxLayout>
-
-#include <WaveformVRuler.h>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QComboBox>
+#include <QMessageBox>
 #include <iostream>
 using namespace std;
+
 //#ifdef _MSC_VER
 //#include <QWave2/SndPlayerDirectSound.h>
 //#else
@@ -16,41 +17,44 @@ using namespace std;
 //#endif
 //#include <cmath>
 //#include <math.h>
-
+#ifndef __DONT_USE_WAVEFORM
 using namespace QWave2;
+#endif
+
 
 
 MyWidget::MyWidget()
   : QWidget(),
-	layout(new QVBoxLayout(this)),
 
-//#ifdef _MSC_VER
-//    player(new PLAYERIMPLEMENTATION(this->winId())),
-//#else
-    //player(new PLAYERIMPLEMENTATION()),
-//#endif
+    #ifndef __DONT_USE_PLAYER
     player(new PSndPlayer),
+    #endif
+    #ifndef __DONT_USE_WAVEFORM
     cursor(new WaveformCursorProxy(this)),
     selection(new WaveformSelectionProxy(this)),
+    soundfile(0),
+    #endif
     paused(false),
     hasRuler(false)//Flag fuer zustand von Horizontal Ruler
 
 {
-  //waveFormThread = new WaveFormThread;
-    soundfile = 0;
+
+#ifndef __DONT_USE_PLAYER
   player->initPlayer();
   player->enableTicker();
   outDevices = player->getOutputDevices();
-
-  QHBoxLayout* l;
-
-  l = new QHBoxLayout();
-  l->addWidget(new QLabel("Audio File:", this));
+#endif
+  QHBoxLayout* hBoxLayout;
+    layout= new QVBoxLayout();
+  hBoxLayout = new QHBoxLayout();
+  hBoxLayout->addWidget(new QLabel("Audio File:", this));
   fileEntry = new QLineEdit(this);
   fileBrowseBtn = new QPushButton("Browse", this);
   fileAddBtn = new QPushButton("Add", this);
   fileRmvBtn = new QPushButton("Rem", this);
   devicesComboBox = new QComboBox(this);
+
+#ifndef __DONT_USE_PLAYER
   map<int,string>::const_iterator iter;
   for(iter = outDevices.begin();iter!=outDevices.end();++iter){
     QString dev = QString::fromStdString(iter->second);
@@ -58,22 +62,20 @@ MyWidget::MyWidget()
   }
   connect(devicesComboBox,SIGNAL(currentIndexChanged(QString)),
           this,SLOT(on_devicesComboBox_IndexChanged(QString)));
-  l->addWidget(fileEntry);
-  l->addWidget(fileBrowseBtn);
-  l->addWidget(fileAddBtn);
-  l->addWidget(fileRmvBtn);
-  l->addWidget(devicesComboBox);
-  layout->addLayout(l);
+#endif
+  hBoxLayout->addWidget(fileEntry);
+  hBoxLayout->addWidget(fileBrowseBtn);
+  hBoxLayout->addWidget(fileAddBtn);
+  hBoxLayout->addWidget(fileRmvBtn);
+  hBoxLayout->addWidget(devicesComboBox);
 
-  l = new QHBoxLayout();
+
+  #ifndef __DONT_USE_WAVEFORM
   tm = new TimeLabel(this);
   tb = new TimeLabel(this);
   te = new TimeLabel(this);
   td = new TimeLabel(this);
-  QLabel* spacer = new QLabel(this);
-  spacer->setFixedHeight(0);
-  spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-  
+
   tm->setFrameStyle(QFrame::Box | QFrame::Sunken);
   tb->setFrameStyle(QFrame::Box | QFrame::Sunken);
   te->setFrameStyle(QFrame::Box | QFrame::Sunken);
@@ -90,12 +92,31 @@ MyWidget::MyWidget()
   td->setAlignment(Qt::AlignRight);
 
   connect(selection, SIGNAL(waveformSelectionChanged(double,double,Waveform*)),
-	  this, SLOT(changeSelection(double,double,Waveform*)));
+      this, SLOT(changeSelection(double,double,Waveform*)));
+
+
+  hBoxLayout->addWidget(tm);
+  hBoxLayout->addWidget(tb);
+  hBoxLayout->addWidget(te);
+  hBoxLayout->addWidget(td);
+#endif
+  QLabel* spacer = new QLabel(this);
+  spacer->setFixedHeight(0);
+  spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+  
+
+
+
 
   playBtn = new QPushButton(">", this);
   repeatBtn = new QPushButton("R", this);
   pauseBtn = new QPushButton("||", this);
   stopBtn = new QPushButton("X", this);
+
+  playBtn->setFixedSize(20,20);
+  repeatBtn->setFixedSize(20,20);
+  pauseBtn->setFixedSize(20,20);
+  stopBtn->setFixedSize(20,20);
 
   speedSlider = new QSlider(this);
   speedSlider->setOrientation(Qt::Horizontal);
@@ -105,45 +126,49 @@ MyWidget::MyWidget()
 
 
 
-  l->addWidget(tm);
-  l->addWidget(tb);
-  l->addWidget(te);
-  l->addWidget(td);
 
-  l->addWidget(spacer);
 
-  l->addWidget(playBtn);
-  l->addWidget(repeatBtn);
-  l->addWidget(pauseBtn);
-  l->addWidget(stopBtn);
-  l->addWidget(speedSlider);
-  layout->addLayout(l);
+  hBoxLayout->addWidget(spacer);
+
+  hBoxLayout->addWidget(playBtn);
+  hBoxLayout->addWidget(repeatBtn);
+  hBoxLayout->addWidget(pauseBtn);
+  hBoxLayout->addWidget(stopBtn);
+  hBoxLayout->addWidget(speedSlider);
+  layout->addLayout(hBoxLayout);
 
   connect(speedSlider, SIGNAL(valueChanged(int)),
 	  this, SLOT(setSpeed(int)));
 
-  playBtn->setFixedSize(20,20);
-  repeatBtn->setFixedSize(20,20);
-  pauseBtn->setFixedSize(20,20);
-  stopBtn->setFixedSize(20,20);
+
 
   connect(playBtn, SIGNAL(clicked()), this, SLOT(play()));
   connect(repeatBtn, SIGNAL(clicked()), this, SLOT(repeat()));
   connect(pauseBtn, SIGNAL(clicked()), this, SLOT(pauseResume()));
   connect(stopBtn, SIGNAL(clicked()), this, SLOT(stop()));
-
+#ifndef __DONT_USE_WAVEFORM
   sb = new WaveformScrollBar(this);
+
   layout->addWidget(sb);
 
-  player->getPlayerTicker()->registerReceiver(sb);
-  player->getPlayerTicker()->registerReceiver(tm);
+#endif
+
+
+#ifndef  __DONT_USE_PLAYER
+#ifndef __DONT_USE_WAVEFORM
+ player->getPlayerTicker()->registerReceiver(sb);
+ player->getPlayerTicker()->registerReceiver(tm);
   player->getPlayerTicker()->registerReceiver(cursor);
-  
+#endif
+
+#endif
   grid = new QGridLayout();
   grid->setSpacing(1);
   grid->addWidget(new QWidget(this), 0,0);
+  #ifndef __DONT_USE_WAVEFORM
   ruler = new WaveformRuler(true, this);
   grid->addWidget(ruler,0,1);
+#endif
   gridCurRow = 1;
   layout->addLayout(grid);
 
@@ -160,37 +185,50 @@ MyWidget::MyWidget()
 
 MyWidget::~MyWidget()
 {
-  for (size_t i=0; i<sndfiles.size(); ++i)
+  #ifndef __DONT_USE_WAVEFORM
+    for (size_t i=0; i<sndfiles.size(); ++i)
     delete sndfiles[i];
+#endif
+#ifndef __DONT_USE_PLAYER
   player->terminatePlayer();
   delete player;
+#endif
 }
 
 void MyWidget::addSndFile()
 {
+    QFileInfo finfo(fileEntry->text());
+#ifndef __DONT_USE_PLAYER
     if(fileEntry->text().isEmpty()){
         //fileEntry->setText("/Users/Admin/Documents/python/_testfiles/testfolder/_no_prob/_Time/Test_Time_St_16mono44.wav");
         fileEntry->setText("/Users/Admin/Documents/python/_testfiles/testfolder/_no_prob/_Time/Test_Time_St_16_00.wav");
     }
 
-    QFileInfo finfo(fileEntry->text());
+
     if (!finfo.exists()) {
         QString msg("Can't find file: '%1'");
         QMessageBox::critical(this,"Error",msg.arg(finfo.filePath()));
         return;
     }
-    player->pause();
 
+    player->pause();
+#endif
 
 
     double len = 10;
 #ifdef WIN32
+#ifndef __DONT_USE_PLAYER
     player->addFile(finfo.filePath().toStdWString().c_str());
+#endif
+    #ifndef __DONT_USE_WAVEFORM
     soundfile = new SndFile(finfo.filePath().toStdWString().c_str());
+#endif
 #else
+
     player->addFile(finfo.filePath().toStdString().c_str());
     soundfile = new SndFile(finfo.filePath().toStdString().c_str());
 #endif
+    #ifndef __DONT_USE_WAVEFORM
     len = soundfile->getLengthSeconds();
     soundfile->open();
 
@@ -255,6 +293,8 @@ void MyWidget::addSndFile()
             w->display(0,len,true);
         }// for
     }
+   sndfiles.push_back(soundfile);
+
   //player->resume();
 
 
@@ -267,11 +307,11 @@ void MyWidget::addSndFile()
    hzoomSlider->setMaximum(10);
 
    //grid->addWidget(hzoomSlider, 4,0);
+#endif
 
 
 
 
-   sndfiles.push_back(soundfile);
 
 
 }
@@ -279,7 +319,7 @@ void MyWidget::addSndFile()
 void MyWidget::removeSndFile()
 {
     cout << "removeSoundfile Called" << endl;
-
+#ifndef __DONT_USE_WAVEFORM
     for (size_t i=0; i<sndfiles.size(); ++i)
     {
 
@@ -290,6 +330,7 @@ void MyWidget::removeSndFile()
 
 
     sndfiles.pop_back();
+#endif
 }
 
 
@@ -310,7 +351,9 @@ void MyWidget::play()
 {
   paused = false;
   pauseBtn->setText("||");
+#ifndef __DONT_USE_PLAYER
   player->play(0,5);
+#endif
   //if (selection->getWidthSeconds() < 0.90){
       //player->play(selection->getBeginSeconds(),
       //   (soundfile->getLengthSeconds() - selection->getBeginSeconds()));}
@@ -336,12 +379,16 @@ void MyWidget::pauseResume()
 {
   if (paused) {
     paused = false;
+    #ifndef __DONT_USE_PLAYER
     player->resume();
+#endif
     pauseBtn->setText("||");
   }
   else {
     paused = true;
+    #ifndef __DONT_USE_PLAYER
     player->pause();
+#endif
     pauseBtn->setText("=");
   }
 }
@@ -350,25 +397,33 @@ void MyWidget::stop()
 {
   paused = false;
   pauseBtn->setText("||");
+#ifndef __DONT_USE_PLAYER
   player->stop();
+#endif
 }
 
+#ifndef __DONT_USE_WAVEFORM
 void MyWidget::changeSelection(double beg, double dur, Waveform*)
 {
   tb->setTime(beg);
   te->setTime(beg+dur);
   td->setTime(dur);
 }
+#endif
 
 void MyWidget::setSpeed(int v)
 {
-  player->setSpeed(pow(2.0,v/10.0));
+  #ifndef __DONT_USE_PLAYER
+    player->setSpeed(pow(2.0,v/10.0));
+#endif
 }
 
+#ifndef __DONT_USE_WAVEFORM
 void MyWidget::setTime(Waveform*,double t)
 {
   tm->setTime(t);
 }
+#endif
 
 void MyWidget::on_devicesComboBox_IndexChanged(QString id){
     int _id;
@@ -380,6 +435,7 @@ void MyWidget::on_devicesComboBox_IndexChanged(QString id){
         }
     }
     */
+#ifndef __DONT_USE_PLAYER
     map<int,string>::iterator iter;
     for(iter = outDevices.begin();iter != outDevices.end();++iter) {
 
@@ -389,16 +445,9 @@ void MyWidget::on_devicesComboBox_IndexChanged(QString id){
         _id =  iter->first;
         }
     }
+
     player->setOutputDevice(_id);
+#endif
 }
 
-int main(int argc, char* argv[])
-{
-  QApplication app(argc, argv);
-  
-  MyWidget w;
 
-  w.show();
-
-  app.exec();
-}
